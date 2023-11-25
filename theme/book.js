@@ -17,6 +17,11 @@ function playground_text(playground, hidden = true) {
   }
 }
 
+function get_playground_language(playground) {
+  let code_block = playground.querySelector("code");
+  return [...code_block.classList].find((lang) => lang.startsWith("language-"));
+}
+
 (function codeSnippets() {
   function fetch_with_timeout(url, options, timeout = 6000) {
     return Promise.race([
@@ -28,7 +33,10 @@ function playground_text(playground, hidden = true) {
   }
 
   var playgrounds = Array.from(document.querySelectorAll(".playground"));
-  if (playgrounds.length > 0) {
+  if (
+    playgrounds.length > 0 &&
+    get_playground_language(playgrounds[0]) === "language-rust"
+  ) {
     fetch_with_timeout("https://play.rust-lang.org/meta/crates", {
       headers: {
         "Content-Type": "application/json",
@@ -65,7 +73,7 @@ function playground_text(playground, hidden = true) {
             win: "Ctrl-Enter",
             mac: "Ctrl-Enter",
           },
-          exec: (_editor) => run_rust_code(playground_block),
+          exec: (_editor) => run_code(playground_block),
         });
       }
     }
@@ -103,7 +111,7 @@ function playground_text(playground, hidden = true) {
     }
   }
 
-  function run_rust_code(code_block) {
+  function run_code(code_block) {
     var result_block = code_block.querySelector(".result");
     if (!result_block) {
       result_block = document.createElement("code");
@@ -114,67 +122,75 @@ function playground_text(playground, hidden = true) {
 
     let text = playground_text(code_block);
     let classes = code_block.querySelector("code").classList;
-    let edition = "2015";
-    if (classes.contains("edition2018")) {
-      edition = "2018";
-    } else if (classes.contains("edition2021")) {
-      edition = "2021";
-    }
-    var params = {
-      version: "stable",
-      optimize: "0",
-      code: text,
-      edition: edition,
-    };
-
-    if (text.indexOf("#![feature") !== -1) {
-      params.version = "nightly";
-    }
 
     result_block.innerText = "Running...";
 
-    // fetch_with_timeout("https://play.rust-lang.org/evaluate.json", {
-    //     headers: {
-    //         'Content-Type': "application/json",
-    //     },
-    //     method: 'POST',
-    //     mode: 'cors',
-    //     body: JSON.stringify(params)
-    // })
-    // .then(response => response.json())
-    // .then(response => {
-    //     if (response.result.trim() === '') {
-    //         result_block.innerText = "No output";
-    //         result_block.classList.add("result-no-output");
-    //     } else {
-    //         result_block.innerText = response.result;
-    //         result_block.classList.remove("result-no-output");
-    //     }
-    // })
-    // .catch(error => result_block.innerText = "Playground Communication: " + error.message);
-    try {
-      (() => {
-        const log = console.log;
-        let out = "";
-        // Override console.log function
-        console.log = (...args) => {
-          args.map((arg) => {
-            if (typeof arg === "object") {
-              out = out + JSON.stringify(arg, null, 2);
-            } else {
-              out = out + arg;
-            }
-          });
+    const code_element = code_block.querySelector("code");
+    if (code_element.classList.contains("language-rust")) {
+      let edition = "2015";
+      if (classes.contains("edition2018")) {
+        edition = "2018";
+      } else if (classes.contains("edition2021")) {
+        edition = "2021";
+      }
+      var params = {
+        version: "stable",
+        optimize: "0",
+        code: text,
+        edition: edition,
+      };
 
-          out = out + "\n";
-          return log(...args);
-        };
+      if (text.indexOf("#![feature") !== -1) {
+        params.version = "nightly";
+      }
+      fetch_with_timeout("https://play.rust-lang.org/evaluate.json", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        mode: "cors",
+        body: JSON.stringify(params),
+      })
+        .then((response) => response.json())
+        .then((response) => {
+          if (response.result.trim() === "") {
+            result_block.innerText = "No output";
+            result_block.classList.add("result-no-output");
+          } else {
+            result_block.innerText = response.result;
+            result_block.classList.remove("result-no-output");
+          }
+        })
+        .catch(
+          (error) =>
+            (result_block.innerText =
+              "Playground Communication: " + error.message)
+        );
+    } else {
+      try {
+        (() => {
+          const log = console.log;
+          let out = "";
+          // Override console.log function
+          console.log = (...args) => {
+            args.map((arg) => {
+              if (typeof arg === "object") {
+                out = out + JSON.stringify(arg, null, 2);
+              } else {
+                out = out + arg;
+              }
+            });
 
-        eval(text);
-        result_block.innerText = out;
-      })();
-    } catch (error) {
-      result_block.innerText = error;
+            out = out + "\n";
+            return log(...args);
+          };
+
+          eval(text);
+          result_block.innerText = out;
+        })();
+      } catch (error) {
+        result_block.innerText = error;
+      }
     }
   }
 
@@ -257,12 +273,17 @@ function playground_text(playground, hidden = true) {
     });
   });
 
-  // Add playground class to code block parent
+  // Add playground class to code block parents
   Array.from(document.querySelectorAll("code.editable")).forEach(function (
     editable_code
   ) {
     editable_code.parentNode.classList.add("playground");
   });
+  Array.from(document.querySelectorAll("code.mdbook-runnable")).forEach(
+    (editable_code) => {
+      editable_code.parentNode.classList.add("playground");
+    }
+  );
 
   if (window.playground_copyable) {
     Array.from(document.querySelectorAll("pre code")).forEach(function (block) {
@@ -306,7 +327,7 @@ function playground_text(playground, hidden = true) {
 
     buttons.insertBefore(runCodeButton, buttons.firstChild);
     runCodeButton.addEventListener("click", function (e) {
-      run_rust_code(pre_block);
+      run_code(pre_block);
     });
 
     if (window.playground_copyable) {

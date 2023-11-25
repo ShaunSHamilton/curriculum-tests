@@ -2,7 +2,7 @@
 
 ## Browser
 
-```javascript,editable,mdbook-runnable,ignore,hidelines=#
+```javascript,mdbook-runnable,hidelines=#
 # const __helpers = {
 #  python: {
 #    getDef: (code, functionName) => {

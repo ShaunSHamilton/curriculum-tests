@@ -3,3 +3,12 @@ authors = ["Shaun Hamilton"]
 language = "en"
 multilingual = false
 src = "src"
+
+[output.html.playground]
+editable = true
+
+[output.html]
+default-theme = "ayu"
+git-repository-url = "https://github.com/ShaunSHamilton/curriculum-tests"
+git-repository-icon = "fa-github"
+site-url = "https://shaunshamilton.github.io/curriculum-tests/"
