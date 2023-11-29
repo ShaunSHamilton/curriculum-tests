@@ -2,39 +2,37 @@
 
 ## Browser
 
+Testing a function:
+
 ```javascript,mdbook-runnable,hidelines=#
-# const __helpers = {
-#  python: {
-#    getDef: (code, functionName) => {
-#      const regex = new RegExp(
-#        `\\n(?<function_indentation> *?)def\\s+${functionName}\\s*\\((?<function_parameters>[^\\)]*)\\)\\s*:\\n(?<function_body>.*?)(?=\\n\\k<function_indentation>[\\w#]|$)`,
-#       "s"
-#      );
-#
-#      const matchedCode = regex.exec(code);
-#      if (matchedCode) {
-#        const { function_parameters, function_body, function_indentation } = matchedCode.groups;
-#
-#        const functionIndentationSansNewLine = function_indentation.replace(
-#          /\n+/,
-#          ""
-#        );
-#        return {
-#          def: matchedCode[0],
-#          function_parameters,
-#          function_body,
-#          function_indentation: functionIndentationSansNewLine.length,
-#        };
-#      }
-#      return null;
-#    }
-#  }
-# };
-# const __pyodide = {
-#  runPython: (code) => {
-#    return code;
-#  },
-# };
+# {{#rustdoc_include tools/helpers.js:1}}
+const code = `
+a = 1
+b = 2
+
+def add(x, y):
+  result = x + y
+  print(f"{x} + {y} = {result}")
+  return result
+
+`;
+
+{
+  const add = __helpers.python.getDef(code, "add");
+  const { function_body, function_indentation, def, function_parameters } =
+    add;
+  console.assert(function_indentation === 0);
+  console.assert(function_parameters === "x, y");
+  console.assert(function_body.match(/result\s*=\s*x\s*\+\s*y/));
+  console.log(add);
+}
+```
+
+Running the code of a singluar function to get the output:
+
+```javascript,mdbook-runnable,hidelines=#
+# {{#rustdoc_include tools/helpers.js:1}}
+# {{#rustdoc_include tools/pyodide.js:1}}
 const code = `
 a = 1
 b = 2
@@ -63,4 +61,24 @@ assert add(a, b) == 300
   const out = __pyodide.runPython(c); // If this does not throw, code is correct
   console.log(add);
 }
+```
+
+## Notes on Python
+
+- Python does **not** allow newline characters between keywords and their arguments. E.g:
+
+```python
+def
+  add(x, y):
+  return x + y
+```
+
+- Python **does** allow newline characters between function arguments. E.g:
+
+```python
+def add(
+  x,
+  y
+):
+  return x + y
 ```
