@@ -7,6 +7,6 @@
 - [HTML]()
 - [CSS]()
 - [JavaScript]()
-- [Rust]()
+- [Rust](./rust.md)
 - [Nodejs]()
 - [Python](./python.md)
