@@ -7,8 +7,15 @@ src = "src"
 [output.html.playground]
 editable = true
 
+[preprocessor]
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "3.0.1"    # do not edit: managed by `mdbook-admonish install`
+
 [output.html]
 default-theme = "ayu"
 git-repository-url = "https://github.com/ShaunSHamilton/curriculum-tests"
 git-repository-icon = "fa-github"
 site-url = "https://shaunshamilton.github.io/curriculum-tests/"
+additional-css = ["./theme/css/mdbook-admonish.css"]
